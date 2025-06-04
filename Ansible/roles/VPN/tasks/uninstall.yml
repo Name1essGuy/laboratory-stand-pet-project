@@ -1,0 +1,29 @@
+---
+
+- name: Stop OpenVPN server
+  ansible.builtint.systemd_service:
+    name: openvpn@server
+    state: stopped
+    enabled: false
+
+- name: Remove server directory
+  ansible.builtin.file:
+    path: "{{ ovpn_server_dir }}"
+    state: absent
+
+- name: Remove service users
+  ansible.builtin.user:
+    name: "{{ vpn_username }}"
+    state: absent
+    remove: yes
+
+- name: Remove service group_vars
+  ansible.builtin.group:
+    name: "{{ vpn_group }}"
+    state: absent
+
+- name: Remove packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ packages }}"

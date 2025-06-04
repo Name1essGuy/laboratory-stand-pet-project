@@ -1,0 +1,20 @@
+---
+
+# Тест используется для проверки работоспособности роли с дефолтными параметрами
+
+- name: Test role (default variables)
+
+  vars:
+    ovpn_server_dir: /etc/openvpn/server
+    ovpn_username: vpn-admin
+    ovpn_user_password: password
+    ovpn_group: vpn-ops
+    ca_server: ca_server
+    ca_dir: /etc/CA/server
+
+  role:
+    - VPN
+  
+  tasks:
+    - name: Play tests
+      ansible.builtin.include_task: "../../tests/test.yml"

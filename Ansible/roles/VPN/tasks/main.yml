@@ -1,0 +1,7 @@
+---
+
+- name: Include all tasks
+  ansible.builtin.include_task: "{{ item }}"
+  loop:
+    - openvpn.yml
+    - server-create.yml

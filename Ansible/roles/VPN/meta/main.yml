@@ -1,0 +1,20 @@
+galaxy_info:
+  role_name: vpn
+  namespace: name1essguy
+  author: Name1essGuy
+  description: A role for VPN server creation (using OpenVPN)
+
+  license: BSD-3-Clause
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+      - jammy
+
+  galaxy_tags:
+    - vpn
+    - openvpn
+
+dependencies: []

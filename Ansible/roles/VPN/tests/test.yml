@@ -1,0 +1,93 @@
+---
+
+- name: Test role (user parameters)
+  
+  vars:
+    required_packages: "{{ packages }}"
+    required_groups:
+      - "{{ ca_group }}"
+    reuired_users:
+      - "{{ ca_username }}"
+  
+  tasks:
+
+    - name: Gather all installed packages
+      ansible.builtin.package_facts:
+      
+    - name: Package install verification
+      ansible.builtin.assert:
+        that: >
+          item in ansible_facts.packages
+        fail_msg: "Package {{ item }} is missing"
+      loop: "{{ required_packages }}"
+
+    - name: Query required groups
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: group_checks
+      loop: "{{ required_groups }}"
+      ignore_errors: yes
+      changed_when: false
+          
+    - name: Service groups existance verification
+      ansible.builtin.assert:
+        that: >
+          group_checks.results | selectattr('item', 'equalto', name) | map(attribute='gid') | first is defined
+        fail_msg: "Group '{{ name }}' is missing!"
+      loop: "{{ required_groups }}"
+      loop_control:
+        loop_var: name
+
+    - name: Gather all users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: user_checks
+      loop: "{{ required_users }}"
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Service users existance verification
+      ansible.builtin.assert:
+        that: >
+          user_checks.results | selectattr('item', 'equalto', name) | map(attribute='uid') | first is defined
+        fail_msg: "User '{{ name }}' is missing!"
+      loop: "{{ required_users }}"
+      loop_control:
+        loop_var: name
+
+    - name: IP forward check
+      ansible.builtin.lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^\s*net\.ipv4\.ip_forward\s*=\s*1\s*$'
+        state: absent
+      register: forward_check
+      changed_when: false
+      check_mode: yes
+      failed_when: not forward_check.found
+
+    # Проверка наличия необходимых файлов для впн сервера
+#   - name: Server crts and keys check
+#      ansible.builtin.assert:
+#        that:
+#          - ansible.builtin.stat(item).exists
+#        fail_msg: "Missing OpenVPN file: {{ item }}"
+#      loop:
+#        - "/etc/openvpn/server/ca.crt"
+#        - "/etc/openvpn/server/server.crt"
+#        - "/etc/openvpn/server/ta.key"
+#        - "/etc/openvpn/server/server.conf"
+
+    - name: Server crts and keys check
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: file
+      fail_when: not file.stat.exists
+      loop:
+        - "/etc/openvpn/server/ca.crt"
+        - "/etc/openvpn/server/server.crt"
+        - "/etc/openvpn/server/ta.key"
+        - "/etc/openvpn/server/server.conf"
