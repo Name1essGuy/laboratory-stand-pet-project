@@ -1,4 +1,5 @@
 ---
+
 - name: Reset all iptables rules and policies
   block:
     - name: Flush all chains (INPUT, OUTPUT, FORWARD)

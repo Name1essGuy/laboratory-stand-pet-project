@@ -33,15 +33,17 @@ Example Playbook
 
 ## Installation 
 
-Playbook example:
+Playbook example to run server specific tasks:
 
     - hosts: servers
-      roles:
-         - securi
+      include_tasks: "{{ item }}"
+      loop:
+        - <task_name_1>
+        - <task_name_2>
 
 ## Uninstallation  
 
-To remove the VPN role, run:  
+To remove the role, run:  
 ```bash  
 ansible-playbook -i inventory uninstall.yml 
 ```
