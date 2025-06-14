@@ -1,0 +1,50 @@
+---
+
+- name: Allow prometheus exporters
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destintion_port: "{{ item.port }}"
+    match: conntrack
+    ctstate: NEW,ESTABLISHED
+    jump: ACCEPT
+    comment: "{{ item.comment }}"
+  loop:
+    - { port: "{{ node_exporter_port }}", comment: "Allow prometheus node exporter connections"}
+    - { port: "{{ process_exporter_port }}", comment: "Allow prometheus process exporter connections"}
+    - { port: "{{ nginx_exporter_port }}", comment: "Allow prometheus nginx exporter connections"}
+
+- name: Allow grafana and prometheus
+  ansible.builtin.iptables:
+    chain: "{{ item.chain }}"
+    protocol: tcp
+    destintion_port: "{{ item.port }}"
+    match: conntrack
+    ctstate: NEW,ESTABLISHED
+    jump: ACCEPT
+    comment: "{{ item.comment }}"
+  loop:
+    - { chain: "INPUT", port: "3000", comment: "Allow grafana incoming connections" }
+    - { chain: "INPUT,OUTPUT", port: "9090", comment: "Allow all Prometheus traffic" }
+
+# Скопировать бэкапный bash скрипт для настройки фаерволла на целевую машину (на всякий случай)
+- name: Create directory
+  ansible.builtin.file:
+    path: /var/lib/firewall
+    state: directory
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Copy rules script
+  ansible.builtin.template:
+    src: iptables/iptables_monitoring.sh.j2
+    dest: /var/lib/firewall/iptables_monitoring.sh
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Restart iptables
+  ansible.builtin.systemd_service:
+    name: iptables
+    state: restarted

@@ -1,7 +1,14 @@
 - name: Test role (user parameters)
+  hosts: vpn-test-instance
+  vars:
+    required_packages:
+      - "openvpn"
+    required_groups:
+      - "{{ ovpn_group }}"
+    required_users:
+      - "{{ ovpn_username }}"
   
   tasks:
-
     - name: Gather all installed packages
       ansible.builtin.package_facts:
       
@@ -60,25 +67,14 @@
       check_mode: yes
       failed_when: not forward_check.found
 
-    # Проверка наличия необходимых файлов для впн сервера
-#   - name: Server crts and keys check
-#      ansible.builtin.assert:
-#        that:
-#          - ansible.builtin.stat(item).exists
-#        fail_msg: "Missing OpenVPN file: {{ item }}"
-#      loop:
-#        - "/etc/openvpn/server/ca.crt"
-#        - "/etc/openvpn/server/server.crt"
-#        - "/etc/openvpn/server/ta.key"
-#        - "/etc/openvpn/server/server.conf"
-
-    - name: Server crts and keys check
+    - name: Verify OpenVPN server files existence
       ansible.builtin.stat:
         path: "{{ item }}"
-      register: file
-      fail_when: not file.stat.exists
+      register: vpn_file
+      failed_when:
+        - not vpn_file.stat.exists
       loop:
-        - "/etc/openvpn/server/ca.crt"
-        - "/etc/openvpn/server/server.crt"
-        - "/etc/openvpn/server/ta.key"
-        - "/etc/openvpn/server/server.conf"
+      - "/etc/openvpn/server/ca.crt"
+      - "/etc/openvpn/server/server.crt"
+      - "/etc/openvpn/server/ta.key"
+      - "/etc/openvpn/server/server.conf"

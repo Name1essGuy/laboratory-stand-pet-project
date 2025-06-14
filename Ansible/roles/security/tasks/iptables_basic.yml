@@ -1,0 +1,112 @@
+---
+
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - iptables
+  update_cache: true
+
+- name: Basic security
+  block:
+
+    - name: Allow incoming loopback
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: lo
+        jump: ACCEPT
+        comment: "Allow incoming localhost traffic"
+
+    - name: Allow outgoing loopback
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        out_interface: lo
+        jump: ACCEPT
+        comment: "Allow outgoing localhost traffic"
+
+    - name: Allow established connections & drop all invalid
+      ansible.builtin.iptables:
+        chain: "{{ item.chain }}"
+        match: "{{ item.match }}"
+        ctstate: "{{ item.ctstate }}"
+        jump: "{{ item.jump }}"
+        comment: "{{ item.comment }}"
+      loop:
+        - { chain: "INPUT", match: "conntrack", ctstate: "ESTABLISHED,RELATED", jump: "ACCEPT", comment: "Allow established connections" }
+        - { chain: "INPUT", match: "conntrack", ctstate: "INVALID", jump: "DROP", comment: "Drop all invalid connections" }
+  
+    - name: Allow incoming HTTP
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 80
+        match: conntrack
+        ctstate: NEW,ESTABLISHED
+        jump: ACCEPT
+        comment: "Allow incoming HTTP"
+
+    - name: Allow outgoing HTTP
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        source_port: 80
+        match: conntrack
+        ctstate: ESTABLISHED
+        jump: ACCEPT
+        comment: "Allow outgoing HTTP"
+        
+    - name: Allow all HTTP & HTTPS
+      ansible.builtin.iptables:
+        chain: "{{ item.chain }}"
+        protocol: tcp
+        match:
+          - multiport
+          - conntrack
+        destination_port: 80,443
+        ctstate: "{{ item.ctstate }}"
+        jump: ACCEPT
+        comment: "{{ item.comment }}"
+      loop:
+        - { chain: "INPUT", ctstate: "NEW,ESTABLISHED", comment: "Allow incoming HTTP & HTTPS" }
+        - { chain: "OUTPUT", ctstate: "ESTABLISHED", comment: "Allow outgoing HTTP & HTTPS" }
+
+    - name: Allow incoming SSH
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        match: conntrack
+        ctstate: NEW,ESTABLISHED
+        jump: ACCEPT
+        comment: "Allow incoming SSH"
+
+    - name: Allow outgoing SSH
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        source_port: 22
+        match: conntrack
+        ctstate: ESTABLISHED
+        jump: ACCEPT
+        comment: "Allow outgoing SSH"
+
+# Скопировать бэкапный bash скрипт для настройки фаерволла на целевую машину (на всякий случай)
+- name: Create directory
+  ansible.builtin.file:
+    path: /var/lib/firewall
+    state: directory
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Copy rules script
+  ansible.builtin.template:
+    src: iptables/iptables_basic.sh.j2
+    dest: /var/lib/firewall/iptables_basic.sh
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+  
+- name: Restart iptables
+  ansible.builtin.systemd_service:
+    name: iptables
+    state: restarted

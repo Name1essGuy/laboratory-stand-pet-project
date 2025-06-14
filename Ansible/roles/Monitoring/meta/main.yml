@@ -1,0 +1,20 @@
+galaxy_info:
+  role_name: monitoring
+  namespace: Name1essGuy
+  author: Name1essGuy
+  description: A role for monitoring server creation (Grafana + Prometheus)
+
+  license: BSD-3-Clause
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+      - jammy
+
+  galaxy_tags:
+    - monitoring
+    - grafana+prometheus
+
+dependencies: []

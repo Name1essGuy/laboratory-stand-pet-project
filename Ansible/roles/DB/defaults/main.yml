@@ -1,0 +1,6 @@
+---
+
+#Mysql
+mysql_username: mysql-admin
+mysql_user_password: ""
+mysql_group: mysql-ops

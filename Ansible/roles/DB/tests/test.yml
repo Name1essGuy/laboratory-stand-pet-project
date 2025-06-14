@@ -1,0 +1,74 @@
+# Тест используется для проверки корректности выполнения роли с пользовательскими параметрами
+
+- name: Test role (user parameters)
+  
+  vars:
+    required_packages:
+      - mysql-server
+    required_groups:
+      - "{{ mysql_group }}"
+    reuired_users:
+      - "{{ mysql_username }}"
+  
+  tasks:
+
+    - name: Gather all installed packages
+      ansible.builtin.package_facts:
+      
+    - name: Package install verification
+      ansible.builtin.assert:
+        that: >
+          item in ansible_facts.packages
+        fail_msg: "Package {{ item }} is missing"
+      loop: "{{ required_packages }}"
+
+    - name: Query required groups
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: group_checks
+      loop: "{{ required_groups }}"
+      ignore_errors: yes
+      changed_when: false
+          
+    - name: Service groups existance verification
+      ansible.builtin.assert:
+        that: >
+          group_checks.results | selectattr('item', 'equalto', name) | map(attribute='gid') | first is defined
+        fail_msg: "Group '{{ name }}' is missing!"
+      loop: "{{ required_groups }}"
+      loop_control:
+        loop_var: name
+
+    - name: Gather all users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: user_checks
+      loop: "{{ required_users }}"
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Service users existance verification
+      ansible.builtin.assert:
+        that: >
+          user_checks.results | selectattr('item', 'equalto', name) | map(attribute='uid') | first is defined
+        fail_msg: "User '{{ name }}' is missing!"
+      loop: "{{ required_users }}"
+      loop_control:
+        loop_var: name
+
+    - name: Verify permissions
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: mysql_dir
+      fail_when:
+        - mysql_dir.stat.mode != "0750"
+        - mysql_dir.stat.pw_name != "{{ mysql_username }}"
+        - mysql_dir.stat.gr_name != "{{ mysql_group }}"
+      loop: 
+        - "/var/log/mysql"
+        - "/var/lib/mysql"
+        - "/etc/mysql"

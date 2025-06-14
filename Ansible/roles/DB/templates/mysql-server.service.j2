@@ -1,0 +1,15 @@
+[Unit]
+Description=Service unit for mysql server
+After=network.target
+
+[Service]
+User={{ mysql_username }}
+Group={{ mysql_group }}
+ExecStart=/usr/sbin/mysqld --daemonize --pid-file=/run/mysqld/mysqld.pid
+Restart=always
+PrivateTmp=true
+RuntimeDirectory=mysqld
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

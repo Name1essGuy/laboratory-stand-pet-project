@@ -1,2 +1,3 @@
 ---
-# handlers file for vpn_server
+- name: reload sysctl
+  ansible.builtin.command: sysctl -p

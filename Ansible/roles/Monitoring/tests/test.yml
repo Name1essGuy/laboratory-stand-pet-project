@@ -1,0 +1,64 @@
+---
+
+- name: Test role (user parameters)
+  vars:
+    required_packages:
+      - nginx
+      - prometheus
+      - grafana
+    required_users:
+      - prometheus
+      - "{{ grafana_username}}"
+      - "{{ web_username }}"
+    required_groups:
+      - "{{ grafana_group }}"
+      - "{{ web_group }}"
+      - prometheus
+
+  tasks:
+    # Установка пакетов
+    - name: Packages install verification
+      ansible.builtin.package_facts:
+      register: installed_packages
+      
+      ansible.builtin.assert:
+        that: >
+          item in intalled_packages
+        fail_msg: "Package {{ item }} is missing"
+      loop: "{{ required_packages }}"
+
+    # Наличие сервисных групп
+    - name: Verify service groups existance
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: querry
+      register: group_facts
+      loop: "{{ required_groups }}"
+      ignore_errors: yes
+
+      ansible.builtin.assert:
+        that:
+          - "item.group_facts is defined"
+          - "item.group_facts.uid is defined"
+        fail_msg: "Group {{ item }} does not exist"
+      loop: "{{ group_facts.results }}"
+      loop_control:
+        loop_var: item
+
+    # Наличие сервисных пользователей
+    - name: Verify service user existance
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: query
+      register: user_facts
+      loop: "{{ required_users }}"
+      ignore_errors: yes
+
+      ansible.builtin.assert:
+        that:
+          - "item.user_facts is defined"
+          - "item.user_facts.uid is defined"
+        fail_msg: "User {{ item }} does not exist"
+      loop: "{{ user_facts.results }}"
+      loop_control:
+        loop_var: item

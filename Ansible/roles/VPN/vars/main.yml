@@ -2,3 +2,5 @@
 
 packages:
   - openvpn
+
+ovpn_server_dir: /etc/openvpn/server

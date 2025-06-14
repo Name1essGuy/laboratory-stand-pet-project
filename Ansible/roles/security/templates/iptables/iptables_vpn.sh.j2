@@ -1,0 +1,25 @@
+#! /bin/bash
+
+eth=eth0
+
+# ===== OpenVPN =====
+# Подключения к OpenVPN
+iptables -A INPUT -i "$eth" -m state --state NEW -p udp --dport 1194 -j ACCEPT
+# Разрешить трафик OpenVPN по TUN интерфейсу
+iptables -A INPUT -i tun+ -j ACCEPT
+iptables -A OUTPUT -o tun+ -j ACCEPT
+# Разрешить перенаправление подключений по TUN интерфейсу на другие интерфейсы
+iptables -A FORWARD -i tun+ -j ACCEPT
+iptables -A FORWARD -i tun+ -o "$eth" -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eth0 -o tun+ -m state --state RELATED,ESTABLISHED -j ACCEPT
+# NAT транслирование клиентского трафика в интернет
+iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o "$eth" -j MASQUERADE
+
+
+# ===== Prometheus экспортеры =====
+# Node exporter
+iptables -A INPUT -p tcp --dport {{ node_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Process exporter
+iptables -A INPUT -p tcp --dport {{ process_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# OVPN exporter
+iptables -A INPUT -p tcp --dport {{ ovpn_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT

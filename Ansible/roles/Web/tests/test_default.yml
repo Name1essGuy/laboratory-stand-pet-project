@@ -1,0 +1,16 @@
+---
+
+# Тест используется после запуска main плэйбука роли
+
+- name: Test role (default parameters)
+  vars:
+    web_username: web-admin
+    web_user_password: password
+    web_group: web-ops
+
+  role:
+    - Web
+  
+  tasks:
+    - name: Play tests
+      ansible.builtin.include_task: "../../tests/test.yml"

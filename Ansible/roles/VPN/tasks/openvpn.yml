@@ -1,28 +1,31 @@
 ---
-
 - name: Install openvpn
   ansible.builtin.apt:
     name:
       - openvpn
-    udpate_cache: true
+    update_cache: true
 
 - name: Enable ip forwarding
   ansible.builtin.lineinfile:
     path: /etc/sysctl.conf
-    regexp: '#net.ipv4.ip_forward=1'
-    line: net.ipv4.ip_forward=1
-  bash: sysctl -p /etc/sysctl.conf
+    regexp: '^#\s*net\.ipv4\.ip_forward=1'
+    line: 'net.ipv4.ip_forward=1'
+    state: present
+    backup: yes
+  notify: reload sysctl
 
-- name: Create service group and user
+- name: Create service group
   ansible.builtin.group:
     name: "{{ ovpn_group }}"
     state: present
-    system: yes
+    system: true
+
+- name: Create service user
   ansible.builtin.user:
-    name: "{{ ovpn_username}}"
+    name: "{{ ovpn_username }}"
     comment: service account for easy-rsa
-    group: "{{ ovpn_group}}"
-    shell: /usr/sbin/nologin #/sbin/nologin
+    group: "{{ ovpn_group }}"
+    shell: /usr/sbin/nologin
     home: "/nonexistent"
     password: "{{ ovpn_user_password | password_hash('sha512') }}"
-    system: yes
+    system: true

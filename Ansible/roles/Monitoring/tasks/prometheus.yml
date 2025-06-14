@@ -1,0 +1,86 @@
+---
+
+- name: Install prometehus & alertmanager
+  
+  vars: 
+    required_packages:
+      - "prometehus"
+      - "prometehus-alertmanager"
+  
+  tasks:
+    - name: Install packages
+      ansible.builtin.apt:
+        name: "{{ required_packages }}"
+        update_cache: true
+
+    - name: Copy prometehus cfg
+      ansible.builtin.template:
+        src: prometheus/prometheus.yml.j2 # Проверить
+        dest: /etc/prometheus/prometheus.yml
+        owner: root
+        group: root
+        mode: "u=rwx,g=rx,o="
+    
+    - name: Copy prometheus rules
+      ansible.builtin.copy:
+        src: prometheus/rules.yml # Проверить
+        dest: /etc/prometheus/rules.yml
+        owner: root
+        group: root
+        mode: "u=rwx,g=rx,o="
+    
+    - name: Create system group
+      ansible.builtin.group:
+        name: prometheus
+        state: present
+        system: true
+
+    - name: Create system user for prometheus
+      ansible.builtin.user:
+        name: prometheus
+        comment: prometheus system user
+        group: prometheus
+        shell: /usr/sbin/nologin # sbin/nologin
+        home: "/nonexistent"
+        system: true
+    
+    - name: Create system user for alertmanager
+      ansible.builtin.user:
+        name: alertmanager
+        comment: prometheus alertmanager system user
+        group: prometheus
+        shell: /usr/sbin/nologin # sbin/nologin
+        home: "/nonexistent"
+        system: true
+
+    - name: Set permissions for prometheus directory
+      ansible.builtin.file:
+        path: "/etc/prometheus"
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: "u=rwx,g=rx,o="
+
+    - name: Set permissions for alertmanager cfg
+      ansible.builtin.file:
+        path: "/etc/prometheus/alertmanager.yml"
+        owner: alertmanager
+
+    - name: Copy prometheus & alertmanager systemd unit files
+      ansible.builtin.copy:
+        src: "systemd/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+      loop:
+        - prometheus.service
+        - prometheus-alertmanager.service
+
+    - name: Run prometheus & alertmanager as system users
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+        daemon_reload: true
+      loop:
+        - prometheus.service
+        - prometheus-alertmanager.service
+  

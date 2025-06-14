@@ -1,0 +1,14 @@
+[Unit]
+Description=Prometheus alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=alertmanager
+Group=prometheus
+Type=simple
+ExecStart=/usr/bin/prometheus-aletmanager \
+    --config.file=/etc/prometheus/alertmanager.yml
+
+[Install]
+WantedBy=multi-user.target

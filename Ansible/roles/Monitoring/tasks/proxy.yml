@@ -1,0 +1,51 @@
+---
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name:
+      - nginx
+    update_cache: true
+
+- name: Create service group
+  ansible.builtin.group:
+    name: "{{ web_group }}"
+    state: present
+    system: yes
+
+- name: Create system user
+  ansible.builtin.user:
+    name: "{{ web_username }}"
+    comment: service user for nginx
+    group: "{{ web_group }}"
+    shell: /usr/sbin/nologin #/sbin/nologin
+    home: "/nonexistent"
+    password: "{{ {{ hostvars[groups['Web'][0]]['web_user_password'] }} | password_hash('sha512') }}"
+    system: yes
+
+- name: Copy sites config files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ web_username }}"
+    group: "{{ web_group }}"
+    mode: "u=rwx,g=rx,o=" # 0750
+  loop:
+    - { src: "nginx/grafana.j2", dest: "/etc/nginx/sites-enables/grafana" }
+    - { src: "nginx/prometheus.j2", dest: "/etc/nginx/sites-enables/prometheus" }
+
+- name: Copy systemd unit
+  ansible.builtin.template:
+    src: systemd/nginx.service.j2
+    dest: /etc/systemd/system/nginx.service
+
+- name: Stop nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: stopped
+
+- name: Start nginx as system user
+  ansible.builtin.systemd_service:
+    name: nginx.service
+    state: started
+    enabled: true
+    daemon_reload: true

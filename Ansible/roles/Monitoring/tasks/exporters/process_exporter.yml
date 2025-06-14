@@ -1,0 +1,37 @@
+---
+
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - prometheus-process-exporter
+    update_cache: true
+
+- name: Create system group
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+    system: true
+
+- name: Create system user
+  ansible.builtin.user:
+    name: process_exporter
+    comment: prometheus process exporter system user
+    group: prometheus
+    shell: /usr/sbin/nologin # sbin/nologin
+    home: "/nonexistent"
+    system: true
+  
+- name: Copy systemd unit
+  ansible.builtin.copy:
+    src: systemd/prometheus-process-exporter.service
+    dest: /etc/systemd/system/prometheus-process-exporter.service
+    owner: root
+    group: root
+    mode: u=rwx, g=rwx
+
+- name: Start exporter as service user
+  ansible.builtin.systemd_service:
+    name: prometheus-process-exporter.service
+    state: started
+    enabled: true
+    daemon_reload: true

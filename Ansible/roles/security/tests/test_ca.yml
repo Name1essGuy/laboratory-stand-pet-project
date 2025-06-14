@@ -1,0 +1,15 @@
+---
+
+# Этот тест проверит корректность установки правил фаерволла для CA сервера
+
+- name: Basic rules check
+  vars:
+    expected_rules:
+      - '-A INPUT -p tcp --dport {{ node_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p tcp --dport {{ process_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT'
+    backup_scripts:
+      - "/var/lib/firewall/iptables_ca.sh"
+
+  tasks:
+    - name: Play tests
+      ansible.builtin.include_task: "test.yml"

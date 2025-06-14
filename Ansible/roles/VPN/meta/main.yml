@@ -1,6 +1,6 @@
 galaxy_info:
   role_name: vpn
-  namespace: name1essguy
+  namespace: Name1essGuy
   author: Name1essGuy
   description: A role for VPN server creation (using OpenVPN)
 

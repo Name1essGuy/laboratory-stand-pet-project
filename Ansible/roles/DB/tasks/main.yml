@@ -1,0 +1,4 @@
+---
+
+- name: Play tasks
+  ansible.builtin.include_tasks: mysql-server.yml

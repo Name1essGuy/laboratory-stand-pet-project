@@ -1,12 +1,10 @@
 ---
-# defaults file for vpn_server
 
 # Ovpn
-ovpn_server_dir: <Полный_путь_к_папке_сервера_ovpn>           # Пример: /etc/openvpn/server
-ovpn_username: <Имя_системного_пользователя_для_ovpn>             # Пример: vpn-admin
-ovpn_user_password: <Пароль_для_системного_пользователя_ovpn> # Пример: password
-ovpn_group: <Название_системной_группы_для_ovpn>              # Пример: vpn-ops
+ovpn_username: vpn-admin
+ovpn_user_password: ""
+ovpn_group: vpn-ops
 
 # CA
-ca_server: <Имя_группы_сервера_CA_в_inventory_файле>          # Пример: ca_servers
-ca_dir: <Путь_к_папке_с_CA_на_удалённом_сервере>              # Пример: /part/to/dor
+ca_server: ca_servers
+ca_dir: /etc/CA/server

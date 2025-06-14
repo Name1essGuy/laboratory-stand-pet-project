@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# ===== Prometheus экспортеры =====
+# Node exporter
+iptables -A INPUT -p tcp --dport {{ node_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Process exporter
+iptables -A INPUT -p tcp --dport {{ process_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Nginx exporter
+iptables -A INPUT -p tcp --dport {{ nginx_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+
+# ===== Мониторинг =====
+# Grafana
+iptables -A INPUT -p tcp --dport 3000 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Prometheus
+iptables -A INPUT,OUTPUT -p tcp --dport 9090 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT

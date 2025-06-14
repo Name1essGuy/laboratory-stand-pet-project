@@ -1,0 +1,20 @@
+galaxy_info:
+  role_name: db
+  namespace: Name1essGuy
+  author: Name1essGuy
+  description: A role for database server creation (using mysql-server)
+
+  license: BSD-3-Clause
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+      - jammy
+
+  galaxy_tags:
+    - database
+    - mysql-server
+
+dependencies: []

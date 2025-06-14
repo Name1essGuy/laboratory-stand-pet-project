@@ -1,0 +1,26 @@
+---
+
+- name: Create directory for service deployment
+  ansible.builtin.file:
+    path: /var/www/releases/latest
+    recurse: yes
+    state: directory
+    owner: "{{ web_username }}"
+    group: "{{ web_group }}"
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Enable service directory
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  ansible.builtin.template:
+    src: /nginx/sites-enabled/deafult
+    dest: /etc/nginx/sites-enabled/default
+    owner: "{{ web_username }}"
+    group: "{{ web_group }}"
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Reload nginx
+  ansible.builtin.systemd_service:
+    name: ngnix.service
+    state: reloaded

@@ -1,7 +1,12 @@
 ---
-- name: Converge
-  hosts: all
+- name: Play CA role
+  hosts: ca-test-instance
   become: true
-
   roles:
-    - role: "{{ playbook_dir }}/../../" 
+    - role: CA
+    
+- name: Play VPN role
+  hosts: vpn-test-instance
+  become: true
+  roles:
+    - role: VPN

@@ -1,0 +1,12 @@
+#! /bin/bash
+
+# ===== Mysql =====
+# Открытие MysqlServer порта 
+iptables -A INPUT -p tcp --dport 3306 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+
+# ===== Prometheus экспортеры =====
+iptables -A INPUT -p tcp --dport {{ node_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Process exporter
+iptables -A INPUT -p tcp --dport {{ process_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# Mysqld exporter
+iptables -A INPUT -p tcp --dport {{ mysqld_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT

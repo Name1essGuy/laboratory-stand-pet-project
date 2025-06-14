@@ -1,0 +1,126 @@
+---
+
+- name: Ca servers setup
+  hosts: ca_servers
+  tasks:
+
+    - name: CA setup
+      ansible.builtin.include_role:
+        name: CA
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+        tasks_from: "{{ item }}"
+      loop:
+        - "exporters/process_exporter.yml"
+        - "exporters/node_exporter.yml"
+
+    - name: Security setup
+      ansible.builtin.include_role:
+        name: Security
+        tasks_from: "{{ item }}"
+      loop:
+        - "iptables_basic.yml"
+        - "iptables_ca.yml"
+
+- name: VPN server setup
+  hosts: vpn_servers
+  tasks:
+
+    - name: VPN setup
+      ansible.builtin.include_role:
+        name: VPN
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+        tasks_from: "{{ item }}"
+      loop:
+        - "exporters/process_exporter.yml"
+        - "exporters/node_exporter.yml"
+        - "exporters/ovpn_exporter.yml"
+
+    - name: Security setup
+      ansible.builtin.include_role:
+        name: Security
+        tasks_from: "{{ item }}"
+      loop:
+        - "iptables_basic.yml"
+        - "iptables_vpn.yml"
+
+- name: DB servers setup
+  hosts: db_servers
+  tasks:
+
+    - name: DB setup
+      ansible.builtin.include_role:
+        name: DB
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+        tasks_from: "{{ item }}"
+      loop:
+        - "exporters/process_exporter.yml"
+        - "exporters/node_exporter.yml"
+        - "exporters/mysqld_exporter.yml"
+        - "exporters/nginx_exporter.yml"
+
+    - name: Security setup
+      ansible.builtin.include_role:
+        name: Security
+        tasks_from: "{{ item }}"
+      loop:
+        - "iptables_basic.yml"
+        - "iptables_db.yml"
+
+- name: Web server setup
+  hosts: web_servers
+  tasks:
+
+    - name: Web setup
+      ansible.builtin.include_role:
+        name: Web
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+        tasks_from: "{{ item }}"
+      loop:
+        - "exporters/process_exporter.yml"
+        - "exporters/node_exporter.yml"
+        - "exporters/nginx_exporter.yml"
+
+    - name: Security setup
+      ansible.builtin.include_role:
+        name: Security
+        tasks_from: "{{ item }}"
+      loop:
+        - "iptables_basic.yml"
+        - "iptables_web.yml"
+
+- name: Monitoring server setup
+  hosts: monitoring_servers
+  tasks:
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+
+    - name: Monitoring setup
+      ansible.builtin.include_role:
+        name: Monitoring
+        tasks_from: "{{ item }}"
+      loop:
+        - "exporters/process_exporter.yml"
+        - "exporters/node_exporter.yml"
+        - "exporters/nginx_exporter.yml"
+
+    - name: Security setup
+      ansible.builtin.include_role:
+        name: security
+        tasks_from: "{{ item }}"
+      loop:
+        - "iptables_basic.yml"
+        - "iptables_monitoring.yml"

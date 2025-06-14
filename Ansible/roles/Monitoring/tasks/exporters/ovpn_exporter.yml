@@ -1,0 +1,66 @@
+---
+
+- name: Install necessary depencies
+  ansible.builtin.apt:
+    name:
+      - golang
+    update_cache: true
+
+- name: Create system group and user
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+    system: true
+  ansible.builtin.user:
+    name: ovpn_exporter
+    comment: prometheus ovpn exporter system user
+    group: prometheus
+    shell: /usr/sbin/nologin # sbin/nologin
+    home: "/nonexistent"
+    system: true
+
+- name: Download and install latest version of OpenVPN exporter
+  # Проверка latest релиза
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/kumina/openvpn_exporter/releases/latest
+    return_content: true
+  register: ovpnexp_latest
+  # Скачивание latest релиза
+  ansible.builtin.get_url:
+    url:  "{{ ovpnexp_latest.json.assets[0].tarball_url }}"
+    dest: "/tmp/openvpn_exporter.tar.gz"
+    mode: "u=rwx,g=rx,o=" # 0750
+  when: ovpnexp_latest.json.assets | lenght > 0
+  # Распаковка скачанного архива
+  ansible.builtin.unarchive:
+    remote_src: yes
+    src: "/tmp/openvpn_exporter.tar.gz"
+    dest: "/tmp/"
+    mode: "u=rwx.g=rx,o="
+  # Указываем путь к логам OVPN
+  ansible.builtin.lineinfile:
+    path: "/tmp/kumina-openvpn_exporter*/main.go"
+    regexp: '^(.*)openvpnStatusPath(.*)$'
+    line: '   openvpnStatusPaths = flag.String("openvpn.status_paths", "/var/log/openvpn/openvpn-status.log", "Paths at which OpenVPN places its status files.")'
+  # Компиляция экспортера
+  cmd: "go build ./main.go"
+  args:
+    chdir: /tmp/kumina-openvpn_exporter*
+  # Копирование бинарника в /usr/bin/
+  ansible.builtin.copy:
+    remote_src: yes
+    src: "/tmp/kumina-openvpn_exporter*/main"
+    dest: /usr/bin/openvpn_exporter
+    owner: exporters
+    group: monitoring
+    mode: "u=rwx,g=rx,o="
+
+- name: Start ovpn exporter as system user
+  ansible.builtin.copy:
+    src: systemd/prometheus-openvpn-exporter.service
+    dest: /etc/systemd/system/prometheus-openvpn-exporter.service
+  ansible.builtin.systemd_service:
+    name: prometheus-openvpn-exporter.service
+    state: started
+    enabled: true
+    daemon_reload: true

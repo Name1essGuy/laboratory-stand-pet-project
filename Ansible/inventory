@@ -1,0 +1,14 @@
+[ca_servers]
+ca              ansible_host=<server_ip> ansible_user=terraform ansible_ssh_private_key=<path/to/ssh/key>
+
+[monitoring_servers]
+monitoring_1    ansible_host=<server_ip> ansible_user=terraform ansible_ssh_private_key=<path/to/ssh/key>
+
+[web_servers]
+web_1           ansible_host=<server_ip> ansible_user=terraform ansible_ssh_private_key=<path/to/ssh/key>
+
+[vpn_servers]
+vpn_1           ansible_host=<server_ip> ansible_user=terraform ansible_ssh_private_key=<path/to/ssh/key>
+
+[db_servers]
+db_1            ansible_host=<server_ip> ansible_user=terraform ansible_ssh_private_key=<path/to/ssh/key>

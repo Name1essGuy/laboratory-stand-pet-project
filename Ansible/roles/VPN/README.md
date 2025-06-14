@@ -1,31 +1,49 @@
-Role Name
+VPN
 =========
 
-A brief description of the role goes here.
+This role installs and sets up components for VPN server. OpenVPN is used as VPN server. Role requires cetrificate authority server (use Name1essGuy.CA) to download necessary certificates from.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+- python3 passlib (Install: `pip install passlib`)
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+### System Configuration
+
+| Variable             | Required | Default               | Description                                                  |
+|----------------------|----------|-----------------------|--------------------------------------------------------------|
+| `ovpn_username`      | yes      | `"vpn-admin"`         | System user for VPN operations                               |
+| `ovpn_group`         | yes      | `"vpn-ops"`           | System group for VPN operations                              |
+| `ovpn_user_password` | yes      | -                     | Password for VPN system user (should be encrypted with vault)|
+| `ca_server`          | yes      | `"ca_servers"`        | Name of CA server group in your inventory file               |
+| `ca_dir`             | yes      | `"/etc/CA/server"`    | Directory for CA files                                       |
+
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+## Installation 
+
+Playbook example:
 
     - hosts: servers
       roles:
-         - { role: username.rolename, x: 42 }
+         - VPN
+
+## Uninstallation  
+
+To remove the VPN role, run:  
+```bash  
+ansible-playbook -i inventory uninstall.yml 
+```
 
 License
 -------
@@ -35,4 +53,4 @@ BSD
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+GitHub: https://github.com/Name1essGuy

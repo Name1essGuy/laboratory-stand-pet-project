@@ -1,0 +1,7 @@
+---
+# Nginx
+web_username: web-admin
+web_user_password: ""
+web_group: web-ops
+release_path: /var/www/releases
+server_port: 80

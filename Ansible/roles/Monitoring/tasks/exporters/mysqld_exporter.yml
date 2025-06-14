@@ -1,0 +1,81 @@
+---
+
+- name: Create system group
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+    system: true
+
+- name: Create system user
+  ansible.builtin.user:
+    name: mysqld_exporter
+    comment: prometheus mysqld exporter system user
+    group: prometheus
+    shell: /usr/sbin/nologin # sbin/nologin
+    home: "/nonexistent"
+    system: true
+
+- name: Check latest version of msqld exporter
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/prometheus/mysqld_exporter/releases/latest
+    return_content: true
+  register: mysqldexp_latest
+
+- name: Search for download url
+  ansible.builtin.set_fact:
+    download_url: >-
+      {{
+        mysqldexp_latest.json.assets |
+        selectattr('name', 'match', '*freebsd-amd64.*') |
+        map(attribute='browser_download_url') |
+        first
+      }}
+
+- name: Download and install mysql exporter
+  block:
+  
+    - name: Download lates version of exporter
+      ansible.builtin.get_url:
+        url: "{{ download_url }}"
+        dest: "/tmp/mysqld_exporter.tar.gz"
+        mode: "u=rwx,g=rx,o="
+      when: download_url is defined
+      
+    - name: Unpack exporter
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: "/tmp/mysqld_exporter.tar.gz"
+        dest: "/tmp/"
+        mode: "u=rwx,g=rx,o="
+
+    - name: Put bin file into /usr/bin
+      ansible.builtin.copy:
+        remote_src: yes
+        src: "/tmp/mysqld_exporter*freebsd-amd64/mysqld_exporter"
+        dest: "/usr/bin/prometheus-mysqld-exporter/prometheus-mysqld-exporter"
+        owner: mysqld_exporter
+        group: prometheus
+        mode: "u=rwx,g=rx,o="
+
+- name: Copy config file for mysql exporter
+  ansible.builtin.template:
+    src: "prometheus-mysqld-exporter/config.my.cnf.j2"
+    dest: "/usr/bin/prometheus-mysqld-exporter/config.my.cnf"
+    owner: mysqld_exporter
+    group: prometheus
+    mode: "u=rwx,g=rx,o="
+
+- name: Copy systemd unit for exporter
+  ansible.builtin.copy:
+    src: "systemd/prometheus-mysqld-exporter.service"
+    dest: "/etc/systemd/system/prometheus-mysqld-exporter.service"
+    owner: mysqld_exporter
+    group: prometheus
+    mode: "u=rwx,g=rx,o="
+
+- name: Run exporter as system user
+  ansible.builtin.systemd_service:
+    name: prometheus-mysqld-exporter.service
+    state: started
+    enabled: yes
+    daemon-reload: true 

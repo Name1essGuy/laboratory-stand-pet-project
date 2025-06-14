@@ -1,0 +1,5 @@
+[client]
+user = {{ mysql_exporter_username }}
+password = {{ mysql_exporter_password }}
+host = {{ mysql_host | default('127.0.0.1') }}
+port = {{ mysql_port | default('3306') }}

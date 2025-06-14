@@ -1,0 +1,22 @@
+---
+- name: Reset all iptables rules and policies
+  block:
+    - name: Flush all chains (INPUT, OUTPUT, FORWARD)
+      ansible.builtin.command: iptables -F
+      changed_when: false
+
+    - name: Delete all non-default chains
+      ansible.builtin.command: iptables -X
+      changed_when: false
+
+    - name: Set default policies to ACCEPT
+      ansible.builtin.command: iptables -P {{ item }} ACCEPT
+      loop:
+        - INPUT
+        - OUTPUT
+        - FORWARD
+      changed_when: false
+
+    - name: Flush NAT rules
+      ansible.builtin.command: iptables -t nat -F
+      changed_when: false

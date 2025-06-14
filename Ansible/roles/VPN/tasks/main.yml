@@ -1,7 +1,7 @@
 ---
 
-- name: Include all tasks
-  ansible.builtin.include_task: "{{ item }}"
+- name: Play all tasks from role
+  ansible.builtin.include_tasks: "{{ item }}"
   loop:
     - openvpn.yml
     - server-create.yml

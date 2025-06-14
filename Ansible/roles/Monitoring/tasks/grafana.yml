@@ -1,0 +1,74 @@
+---
+
+- name: Install grafana dependencies
+  ansible.builtin.apt:
+    name: "{{ grafana_packages }}"
+    update_cache: true
+
+- name: Ensure keyrings directory is present
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+
+- name: Add Grafana gpg key
+  ansible.builtin.apt_key:
+    url: https://apt.grafana.com/gpg.key
+    state: present
+    keyring: /etc/apt/keyrings/grafana.gpg
+
+- name: Add grafana repo
+  ansible.builtin.apt_repository:
+    filename: grafana
+    repo: deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main
+    state: present
+
+- name: Download grafana  
+  ansible.builtin.apt:
+    name:
+      - grafana
+    update_cache: true
+
+- name: Create service group
+  ansible.builtin.group:
+    name: "{{ grafana_group }}"
+    state: present
+    system: yes
+
+- name: Create service user
+  ansible.builtin.user:
+    name: "{{ grafana_username }}"
+    comment: service account for mysql-server
+    group: "{{ grafana_group }}"
+    shell: /usr/sbin/nologin #/sbin/nologin
+    home: "/nonexistent"
+    password: "{{ grafana_user_password | password_hash('sha512') }}"
+    system: yes
+
+- name: Configure Grafana
+  ansible.builtin.template:
+    src: grafana/grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: "{{ grafana_username }}"
+    group: "{{ grafana_group}}"
+    mode: "u=rwx,g=rx,o="
+
+- name: Run grafana by system user
+  block:
+    - name: Stop grafana
+      ansible.builtin.systemd_service:
+        name: grafana-server.service
+        state: stopped
+    
+    - name: Change launch options
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/system/grafana-server.service
+        regexp: "{{ item.exp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { exp: "^(.*)Group=(.*)$", line: "Group={{ grafana_group }}" }
+        - { exp: "^(.*)User=(.*)$", line: "User={{ grafana_username }}" }
+    
+    - name: Start grafana
+      ansible.builtin.systemd_service:
+        state: started
+        enabled: true

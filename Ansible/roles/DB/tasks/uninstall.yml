@@ -1,0 +1,17 @@
+---
+
+- name: Remove MySQL system user
+  ansible.builtin.user:
+    name: "{{ mysql_username }}"
+    state: absent
+    remove: yes
+
+- name: Remove MySQL system group
+  ansible.builtin.group:  
+    name: "{{ mysql_group }}"  
+    state: absent
+
+- name: Uninstall packages
+  ansible.builtin.package:  
+    name: "{{ packages }}"  
+    state: absent

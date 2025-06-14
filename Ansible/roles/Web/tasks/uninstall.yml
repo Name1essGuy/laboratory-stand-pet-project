@@ -1,0 +1,28 @@
+---
+
+- name: Stop nginx
+  ansible.builtin.systemd_service:
+    name: nginx.service
+    state: stopped
+    enabled: false
+
+- name: Remove packages
+  ansible.builtin.package:
+    name: nginx
+    state: absent
+
+- name: Remove system users
+  ansible.builtin.user:
+    name: "{{ web_username }}"
+    state: absent
+    remove: true
+
+- name: Remove system groups
+  ansible.builtin.group:
+    name: "{{ web_group }}"
+    state: absent
+
+- name: Remove deployment directory
+  ansible.builtin.file:
+    path: "{{ release_path }}"
+    state: absent

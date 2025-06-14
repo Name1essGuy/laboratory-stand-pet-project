@@ -1,0 +1,56 @@
+---
+- name: Role uninstallation test
+  tasks:
+    - name: OpenVPN server directory removal verification
+      ansible.builtin.stat:
+        path: "{{ ovpn_server_dir }}"
+      failed_when:
+        - ovpn_server_dir.stat.exists
+
+    - name: Gather all installed packages
+      ansible.builtin.package_facts:
+      
+    - name: Package uninstall verification
+      ansible.builtin.assert:
+        that: >
+          item not in ansible_facts.packages
+        fail_msg: "Package {{ item }} still present"
+      loop: "{{ required_packages }}"
+
+    - name: Query required groups
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: group_checks
+      loop: "{{ required_groups }}"
+      ignore_errors: yes
+      changed_when: false
+          
+    - name: Service groups removal verification
+      ansible.builtin.assert:
+        that: >
+          group_checks.results | selectattr('item', 'equalto', name) | map(attribute='gid') | first is not defined
+        fail_msg: "Group '{{ name }}' still present!"
+      loop: "{{ required_groups }}"
+      loop_control:
+        loop_var: name
+
+    - name: Gather all users
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+      check_mode: true
+      register: user_checks
+      loop: "{{ required_users }}"
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Service users removal verification
+      ansible.builtin.assert:
+        that: >
+          user_checks.results | selectattr('item', 'equalto', name) | map(attribute='uid') | first is not defined
+        fail_msg: "User '{{ name }}' still present!"
+      loop: "{{ required_users }}"
+      loop_control:
+        loop_var: name

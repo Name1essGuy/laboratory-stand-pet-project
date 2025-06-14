@@ -1,0 +1,7 @@
+---
+# Prometheus exporters
+node_exporter_port: 9100
+process_exporter_port: 9256
+nginx_exporter_port: 9113
+ovpn_exporter_port: 9176
+mysqld_exporter_port: 9104

@@ -1,0 +1,21 @@
+---
+
+# Тест используется для проверки работоспособности роли с дефолтными параметрами
+
+- name: Test role (default parameters)
+  vars:
+    mysql_username: mysql-admin
+    mysql_user_password: password
+    mysql_group: mysql-ops
+    mysql_root_password: root-password
+
+  roles:
+    - DB
+
+  tasks:
+    - name: Play tests
+      ansible.builtin.include_playbook: "../../tests/test.yml"
+
+
+
+      

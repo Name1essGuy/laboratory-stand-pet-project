@@ -1,0 +1,50 @@
+---
+
+- name: Role uninstallation
+  vars:
+    services:
+      - "grafana.service"
+      - "prometehus.service"
+      - "prometehus-alertmanager.service"
+      - "ngix.service"
+    required_packages:
+      - grafana
+      - prometehus
+      - prometehus-alertmanager
+      - nginx
+    required_groups:
+      - "{{ grafana_group }}"
+      - "{{ web_group }}"
+      - prometehus
+    required_users:
+      - "{{ grafana_username }}"
+      - "{{ web_username }}"
+      - prometehus
+      - alertmanager
+
+  tasks:
+    - name: Stop services
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ services }}"
+
+    - name: Uninstall packages
+      ansible.builtin.package:  
+        name: "{{ item }}"  
+        state: absent
+      loop: "{{ required_packages }}"
+
+- name: Remove service users
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: absent
+    remove: yes
+  loop: "{{ required_users }}"
+
+- name: Remove service groups
+  ansible.builtin.group:  
+    name: "{{ item }}"  
+    state: absent
+  loop: "{{ required_groups }}"

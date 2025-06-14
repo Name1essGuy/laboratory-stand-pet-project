@@ -1,0 +1,7 @@
+---
+
+- name: Include all playbooks
+  ansible.builtin.include_task: "{{ item }}"
+  loop:
+    - nginx.yml
+    - deployment-dir.yml

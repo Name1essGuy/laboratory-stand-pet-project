@@ -1,0 +1,22 @@
+---
+# defaults file for monitoring_server
+
+# Mysql
+mysql_exporter_username: #<Логин_сервисного_пользователя_БД>   # Пример: exporter
+mysql_exporter_password: #<Пароль_сервисного_пользователя_БД>  # Пример: password
+mysql_host: #<IP_севрера_БД>                                   # Пример: 127.0.0.1
+mysql_port: #<Порт_севрера_БД>                                 # Пример: 3306
+
+# Grafana
+grafana_username: #<Имя_для_сервисного_пользователя_grafana>          # Пример: grafana
+grafana_user_password: #<Пароль_для_сервисного_пользователя_grafana>  # Пример: password
+grafana_group: #<Название_для_сервисной_группы_grafana>               # Пример: grafana
+grafana_host: #<IP_адрес_сервера_с_grafana>                           # Пример: 127.0.0.1
+grafana_port: #<Порт_сервера_с_grafana>                               # Пример: 3000
+grafana_admin_username: #<Логин_для_администратора_grafana>           # Пример: admin
+grafana_admin_password: #<Пароль_для_администратора_grafana>          # Пример: password
+
+# Nginx
+web_username: # <Имя_для_сервисного_пользователя_nginx>           # Пример: nginx-admin
+web_user_password: # <Пароль_для_сервисного_пользователя_nginx>   # Пример: password
+web_group: # <Название_группы_для_сервисного_пользователя_nginx>  # Пример: nginx-ops

@@ -1,0 +1,9 @@
+---
+# tasks file for monitoring_server
+
+- name: Play tasks for monitoring server (exporters excluded)
+  ansible.builtin.include_tasks: "{{ item }}"
+  loop:
+    - grafana.yml
+    - prometheus.yml
+    - proxy.yml

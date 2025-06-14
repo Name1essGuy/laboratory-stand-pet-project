@@ -1,31 +1,54 @@
+---
 dependency:
   name: galaxy
+  options:
+    role-file: molecule/default/requirements.yml
+
 driver:
   name: docker
+
 platforms:
-  - name: vpn-test-instance
+
+  - name: ca-test-instance
     image: "ubuntu:22.04"
+    privileged: true
     pre_build_image: false
     dockerfile: |
       FROM ubuntu:22.04
       RUN apt-get update && \
           apt-get install -y python3 sudo && \
           rm -rf /var/lib/apt/lists/*
+    networks:
+      - name: vpn-network
+
+  - name: vpn-test-instance
+    image: "ubuntu:22.04"
+    privileged: true
+    pre_build_image: false
+    dockerfile: |
+      FROM ubuntu:22.04
+      RUN apt-get update && \
+          apt-get install -y python3 sudo && \
+          rm -rf /var/lib/apt/lists/*
+    ports:
+      - "1194:1194/udp"
+    networks:
+      - name: vpn-network
+    depends_on:
+      - ca-test-instance
+
 provisioner:
   name: ansible
   inventory:
     group_vars:
       all:
+        ansible_python_interpreter: /usr/bin/python3
         ovpn_server_dir: /etc/openvpn/server
         ovpn_username: vpn-admin
         ovpn_user_password: password
         ovpn_group: vpn-ops
-        ca_server: ca_server
+        ca_server: ca-test-instance
         ca_dir: /etc/CA/server
-        required_packages: "{{ packages }}"
-        required_groups:
-          - "{{ ca_group }}"
-        reuired_users:
-          - "{{ ca_username }}"
-verifier: 
+
+verifier:
   name: ansible

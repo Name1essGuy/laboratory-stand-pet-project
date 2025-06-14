@@ -1,0 +1,79 @@
+---
+
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - mysql-server
+      - python3-pymysql
+    update_cache: true
+
+- name: Create service group
+  ansible.builtin.group:
+    name: "{{ mysql_group }}"
+    state: present
+    system: yes
+
+- name: Create service user
+  ansible.builtin.user:
+    name: "{{ mysql_username }}"
+    comment: service account for mysql-server
+    group: "{{ mysql_group }}"
+    shell: /usr/sbin/nologin #/sbin/nologin
+    home: "/nonexistent"
+    password: "{{ mysql_user_password | password_hash('sha512') }}"
+    system: yes
+
+- name: Set permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ mysql_username }}"
+    group: "{{ mysql_group }}"
+    mode: "u=rwx,g=rx,o="
+  loop:
+    - "/var/lib/mysql"
+    - "/var/log/mysql"
+    - "/etc/mysql"
+
+- name: Copy systemd unit
+  ansible.builtin.template:
+    src: mysql-server.service.j2
+    dest: /etc/systemd/system/mysql-server.service
+
+- name: Run mysql-server as service user
+  ansible.builtin.systemd_service:
+    name: mysql-server.service
+    state: started
+    enabled: true
+    daemon-reload: true
+
+# ДОБАВИТЬ .my.cnf
+# TASK [DB : Set root password] **************************************************
+# fatal: [db-test-instance]: FAILED! => {"changed": false, "msg": "unable to connect to database, check login_user and login_password are correct or /********/.my.cnf has the credentials. Exception message: (2003, \"Can't connect to MySQL server on 'localhost' ([Errno 2] No such file or directory)\")"}
+
+- name: Set root password
+  community.mysql.mysql_user:
+    name: root
+    password: root
+    host: localhost
+    login_unix_socket: /var/run/mysqld/mysql.sock
+  
+- name: Basic DB security - Delete anon users
+  community.mysql.mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+
+- name: Basic DB security - Deny remote root access
+  community.mysql.mysql_user:
+    name: root
+    host: "{{ item }}" 
+    state: absent
+  loop:
+    - "127.0.0.1"
+    - "::1"
+    - "%"
+
+- name: Basic DB security - Delete test database
+  community.mysql.mysql_db:
+    name: test
+    state: absent

@@ -1,0 +1,88 @@
+---
+
+- name: Allow prometheus exporters
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destintion_port: "{{ item.port }}"
+    match: conntrack
+    ctstate: NEW,ESTABLISHED
+    jump: ACCEPT
+    comment: "{{ item.comment }}"
+  loop:
+    - { port: "{{ node_exporter_port }}", comment: "Allow prometheus node exporter connections"}
+    - { port: "{{ process_exporter_port }}", comment: "Allow prometheus process exporter connections"}
+    - { port: "{{ ovpn_exporter_port }}", comment: "Allow prometheus OpenVPN exporter connections"}
+
+  # === OpenVPN ===
+- name: Allow TUN input
+  ansible.builtin.iptables:
+    chain: INPUT
+    in_intergace: tun+
+    jump: ACCEPT
+    comment: "Allow OpenVPN tun interface connections"
+
+- name: Allow TUN output
+  ansible.builtin.iptables:
+    chain: OUTPUT
+    out_interface: tun+
+    jump: ACCEPT
+    comment: "Allow OpenVPN tun interface responses"
+
+- name: Allow traffic forwarding
+  ansible.builtin.iptables:
+    chain: FORWARD
+    in_interface: tun+
+    jump: ACCEPT
+    comment: "Allow traffic forwarding"
+
+- name: Allow traffic forwarding
+  ansible.builtin.iptables:
+    chain: FORWARD
+    in_interface: tun+
+    out_interface: eth0
+    match: state
+    state: RELATED,ESTABLISHED
+    jump: ACCEPT
+    comment: "Allow incoming traffic forwarding through ethernet interface"
+
+- name: Allow forwarding through TUN
+  ansible.builtin.iptables:
+    chain: FORWARD
+    in_interface: eth0
+    out_interface: tun+
+    match: state
+    state: RELATED,ESTABLISHED
+    jump: ACCEPT
+    comment: "Allow incoming responses forwarding through tun interface"
+
+- name: Allow NAT
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    source: 10.8.0.0/24
+    output_interface: eth0
+    jump: MASQUERADE
+    comment: "Enable NAT"
+
+# Скопировать бэкапный bash скрипт для настройки фаерволла на целевую машину (на всякий случай)
+- name: Create directory
+  ansible.builtin.file:
+    path: /var/lib/firewall
+    state: directory
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Copy rules script
+  ansible.builtin.template:
+    src: iptables/iptables_vpn.sh.j2
+    dest: /var/lib/firewall/iptables_vpn.sh
+    owner: root
+    group: root
+    mode: "u=rwx,g=rx,o=" # 0750
+
+- name: Restart iptables
+  ansible.builtin.systemd_service:
+    name: iptables
+    state: restarted

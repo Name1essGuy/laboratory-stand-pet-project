@@ -1,18 +1,20 @@
 ---
 
-- name: Dowload necessary files from CA server to VPN
-  # Скачать файлы с удалённого сервера на устройсвто, с которого происходяит запуск плейбука
+- name: Dowload necessary files from CA server
+  # Скачать файлы с удалённого сервера на устройство, с которого происходит запуск плейбука
   ansible.builtin.fetch:
     src: "{{ item.src }}"
     dest: "/tmp/OVPN/{{ item.filename }}"
-    flat: yes
+    flat: true
   loop:
-    - { src: "{{ ca_dir }}/pki/ca.crt", filename: "ca.crt" }
-    - { src: "{{ ca_dir }}/pki/issued/server.crt", filename: "server.crt" }
+    - {src: "{{ ca_dir }}/pki/ca.crt",filename: "ca.crt"}
+    - {src: "{{ ca_dir }}/pki/issued/server.crt", filename: "server.crt"}
   delegate_to: "{{ ca_server }}"
-  run_once: yes
+  run_once: true
+
+- name: Put downloaded files to VPN server
   # Скопировать файлы с устройства, на котором происходит запуск плейбука на удалённый сервер
-  anscible.builtin.copy:
+  ansible.builtin.copy:
     src: "/tmp/OVPN/{{ item.filename }}"
     dest: "{{ ovpn_server_dir }}/{{ item.filename }}"
     owner: "{{ item.owner }}"
@@ -23,10 +25,11 @@
     - { filename: "server.crt", owner: "{{ ovpn_username }}", group: "{{ ovpn_group }}", mode: "u=rwx,g=rx,o=" }
 
 - name: Generate TLS key
-  cmd: "openvpn --genkey secret ta.key"
+  ansible.builtin.command: "openvpn --genkey secret ta.key"
   args:
-    chdir: "{{ ovpn_server_dir }}"  
-  become_user: "{{ ovpn_username }}"
+    chdir: "{{ ovpn_server_dir }}"
+
+- name: Set permissions for TLS key
   ansible.builtin.file:
     path: "{{ ovpn_server_dir }}/ta.key"
     owner: "{{ ovpn_username }}"
@@ -38,11 +41,11 @@
     src: server.conf.j2
     dest: "{{ ovpn_server_dir }}/server.conf"
     owner: "{{ ovpn_username }}"
-    gruop: "{{ ovpn_group }}"
+    group: "{{ ovpn_group }}"
     mode: "u=rwx,g=rx,o=" # 0750
 
 - name: Enable and start OVPN server
-  ansible.builtin.sustemd_service:
-    name: openvpn@server
+  ansible.builtin.systemd_service:
+    name: openvpn-server@server.service
     state: started
     enabled: yes

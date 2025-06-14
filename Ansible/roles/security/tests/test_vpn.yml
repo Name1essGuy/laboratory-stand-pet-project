@@ -1,0 +1,23 @@
+---
+
+# Этот тест проверит корректность установки правил фаерволла для VPN сервера
+
+- name: Basic rules check
+  vars:
+    expected_rules:
+      - '-A INPUT -p tcp --dport {{ node_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p tcp --dport {{ process_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT'
+      - '-A INPUT -p tcp --dport {{ ovpn_exporter_port }} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT'
+      - '-A INPUT -i eth0 -m state --state NEW -p udp --dport 1194 -j ACCEPT'
+      - '-A INPUT -i tun+ -j ACCEPT'
+      - '-A OUTPUT -o tun+ -j ACCEPT'
+      - '-A FORWARD -i tun+ -j ACCEPT'
+      - '-A FORWARD -i tun+ -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT'
+      - '-A FORWARD -i eth0 -o tun+ -m state --state RELATED,ESTABLISHED -j ACCEPT'
+      - '-t nat -A POSTROUTING -s 10.8.0.0/24 -o "$eth" -j MASQUERADE'
+    backup_scripts:
+      - "/var/lib/firewall/iptables_vpn.sh"
+
+  tasks:
+    - name: Play tests
+      ansible.builtin.include_task: "test.yml"

@@ -1,0 +1,36 @@
+---
+
+# Этот тест проверит состояние фаерволла после запуска настройки
+
+- name: Test firewall
+  tasks:
+    # Проверка наличия пакета
+    - name: Package install check
+      ansible.builtin.package:
+        name: iptables
+        state: present
+      register: pkg_check
+      changed_when: false
+      failed_when: pkg_check.failed
+
+    # Просмотр текущиъ правил фаервола
+    - name: Get iptables rules
+      ansible.builtin.command: iptables-save
+      register: iptables_rules
+      canged_when: false
+
+    # Проверка корректности настройки фаерволла
+    - name: Validate iptables rules
+      ansible.builtin.assert:
+        that: "rule in iptables_rules.stdout"
+        fail_msg: "Missing iptables rule: {{ item }}"
+      loop: "{{ expected_rules }}"
+      loop_control:
+        loop_var: item
+
+    # Проверка бэкапного скрипта
+    - name: Check backup script
+      ansible.builtin.assert:
+        that: "ansible.builtin.stat(item).exist"
+        fail_msg: "Missing backup firewall rules script"
+      loop: "{{ backup_scripts }}"
